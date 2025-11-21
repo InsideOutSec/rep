@@ -15,6 +15,22 @@ rep+ is a lightweight Chrome DevTools extension inspired by Burp Suite's Repeate
 - **History & Navigation**: Undo/redo support for edits and history navigation for selected requests.
 - **Starring**: Pin important requests to keep them at the top of your list.
 
+## Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/bscript/rep.git
+   ```
+2. **Open Chrome Extensions**:
+   - Navigate to `chrome://extensions/` in your browser.
+   - Enable **Developer mode** (toggle in the top right corner).
+3. **Load the Extension**:
+   - Click **Load unpacked**.
+   - Select the `rep` folder you just cloned.
+4. **Open DevTools**:
+   - Press `F12` or right-click -> Inspect.
+   - Look for the **rep+** tab (you might need to click the `>>` overflow menu).
+
 This combo makes rep+ handy for bug bounty hunters and vulnerability researchers who want Burp-like iteration without the heavyweight UI. Install the extension, open DevTools, head to the rep+ panel, and start hacking. 😎
 
 ### Demo
