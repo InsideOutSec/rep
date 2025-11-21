@@ -2,6 +2,8 @@
 
 rep+ is a lightweight Chrome DevTools extension inspired by Burp Suite's Repeater. I often need to poke at a few requests without spinning up the full Burp stack, so I built this extension with the help of LLM (Gemini 3) to keep my workflow fast and focused.
 
+![Image](https://github.com/user-attachments/assets/a4767b2d-9246-4f69-a7cd-a99c05edc78e)
+
 ## What it does
 
 - **Capture & Replay**: Captures every HTTP request you trigger while testing. Replay any request and freely manipulate the raw method, path, headers, or body to probe endpoints.
@@ -33,5 +35,3 @@ rep+ is a lightweight Chrome DevTools extension inspired by Burp Suite's Repeate
 
 This combo makes rep+ handy for bug bounty hunters and vulnerability researchers who want Burp-like iteration without the heavyweight UI. Install the extension, open DevTools, head to the rep+ panel, and start hacking. 😎
 
-### Demo
-![Image](https://github.com/user-attachments/assets/a4767b2d-9246-4f69-a7cd-a99c05edc78e)
