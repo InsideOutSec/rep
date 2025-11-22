@@ -807,6 +807,29 @@ function setupEventListeners() {
         });
     }
 
+    // Export Button
+    const exportBtn = document.getElementById('export-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportRequests);
+    }
+
+    // Import Button
+    const importBtn = document.getElementById('import-btn');
+    const importFile = document.getElementById('import-file');
+    if (importBtn && importFile) {
+        importBtn.addEventListener('click', () => {
+            importFile.click();
+        });
+
+        importFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                importRequests(e.target.files[0]);
+                // Reset input so same file can be selected again
+                e.target.value = '';
+            }
+        });
+    }
+
     // History Navigation
     historyBackBtn.addEventListener('click', () => {
         if (historyIndex > 0) {
@@ -1799,4 +1822,175 @@ function formatBytes(bytes, decimals = 2) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function getFilteredRequests() {
+    return requests.filter(request => {
+        const url = request.request.url;
+        const urlLower = url.toLowerCase();
+        const method = request.request.method.toUpperCase();
+
+        // Build searchable text from headers
+        let headersText = '';
+        let headersTextLower = '';
+        if (request.request.headers) {
+            request.request.headers.forEach(header => {
+                const headerLine = `${header.name}: ${header.value} `;
+                headersText += headerLine;
+                headersTextLower += headerLine.toLowerCase();
+            });
+        }
+
+        // Get request body if available
+        let bodyText = '';
+        let bodyTextLower = '';
+        if (request.request.postData && request.request.postData.text) {
+            bodyText = request.request.postData.text;
+            bodyTextLower = bodyText.toLowerCase();
+        }
+
+        // Check search term (search in URL, method, headers, and body)
+        let matchesSearch = false;
+        if (currentSearchTerm === '') {
+            matchesSearch = true;
+        } else if (useRegex) {
+            // Use regex matching
+            try {
+                const regex = new RegExp(currentSearchTerm);
+                matchesSearch =
+                    regex.test(url) ||
+                    regex.test(method) ||
+                    regex.test(headersText) ||
+                    regex.test(bodyText);
+            } catch (e) {
+                matchesSearch = false;
+            }
+        } else {
+            // Plain text matching (case-insensitive)
+            matchesSearch =
+                urlLower.includes(currentSearchTerm) ||
+                method.includes(currentSearchTerm.toUpperCase()) ||
+                headersTextLower.includes(currentSearchTerm) ||
+                bodyTextLower.includes(currentSearchTerm);
+        }
+
+        // Check filter
+        let matchesFilter = true;
+        if (currentFilter !== 'all') {
+            // Filter by Method or Starred
+            if (currentFilter === 'starred') {
+                matchesFilter = request.starred;
+            } else {
+                matchesFilter = method === currentFilter;
+            }
+        }
+
+        return matchesSearch && matchesFilter;
+    });
+}
+
+function exportRequests() {
+    const requestsToExport = getFilteredRequests();
+
+    if (requestsToExport.length === 0) {
+        alert('No requests to export (check your filters).');
+        return;
+    }
+
+    const exportData = {
+        version: "1.0",
+        exported_at: new Date().toISOString(),
+        requests: requestsToExport.map((req, index) => {
+            // Convert headers array to object
+            const headersObj = {};
+            req.request.headers.forEach(h => headersObj[h.name] = h.value);
+
+            const resHeadersObj = {};
+            if (req.response.headers) {
+                req.response.headers.forEach(h => resHeadersObj[h.name] = h.value);
+            }
+
+            return {
+                id: `req_${index + 1}`,
+                method: req.request.method,
+                url: req.request.url,
+                headers: headersObj,
+                body: req.request.postData ? req.request.postData.text : "",
+                response: {
+                    status: req.response.status,
+                    headers: resHeadersObj,
+                    body: req.response.content ? req.response.content.text : ""
+                },
+                timestamp: req.capturedAt
+            };
+        })
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rep_export_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importRequests(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            if (!data.requests || !Array.isArray(data.requests)) {
+                throw new Error('Invalid format: "requests" array missing.');
+            }
+
+            // Append imported requests
+            data.requests.forEach(item => {
+                // Convert headers object back to array
+                const headersArr = [];
+                if (item.headers) {
+                    for (const [key, value] of Object.entries(item.headers)) {
+                        headersArr.push({ name: key, value: value });
+                    }
+                }
+
+                const resHeadersArr = [];
+                if (item.response && item.response.headers) {
+                    for (const [key, value] of Object.entries(item.response.headers)) {
+                        resHeadersArr.push({ name: key, value: value });
+                    }
+                }
+
+                const newReq = {
+                    request: {
+                        method: item.method || 'GET',
+                        url: item.url || '',
+                        headers: headersArr,
+                        postData: { text: item.body || '' }
+                    },
+                    response: {
+                        status: item.response ? item.response.status : 0,
+                        statusText: '', // Not in schema, leave empty
+                        headers: resHeadersArr,
+                        content: { text: item.response ? item.response.body : '' }
+                    },
+                    capturedAt: item.timestamp || Date.now(),
+                    starred: false
+                };
+
+                requests.push(newReq);
+                renderRequestItem(newReq, requests.length - 1);
+            });
+
+            alert(`Imported ${data.requests.length} requests.`);
+
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Failed to import: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
 }

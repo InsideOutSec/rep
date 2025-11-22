@@ -25,6 +25,19 @@
                                 fill="currentColor" />
                         </svg>
                     </button>
+                    <div class="divider-vertical"
+                        style="width: 1px; height: 20px; background: var(--border-color); margin: 0 4px;"></div>
+                    <button id="import-btn" class="icon-btn" title="Import Requests (JSON)">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor" />
+                        </svg>
+                    </button>
+                    <button id="export-btn" class="icon-btn" title="Export Requests (JSON)">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" fill="currentColor" />
+                        </svg>
+                    </button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
                 </div>
                 <div class="filters">
                     <button class="filter-btn active" data-filter="all">All</button>
